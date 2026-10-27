@@ -2,9 +2,10 @@ const express = require('express');
 const dotenv = require('dotenv');
 
 // تحميل متغيرات البيئة من ملف .env
-dotenv.config();
+dotenv.config({ path: './.env' });
 
 const cors = require('cors');
+const morgan = require('morgan'); // استيراد الحزمة
 const connectDB = require('./config/db');
 
 // الاتصال بقاعدة البيانات
@@ -15,6 +16,9 @@ const app = express();
 // Middlewares الأساسية
 app.use(express.json());
 app.use(cors());
+
+// تفعيل morgan لمراقبة الـ Requests (باستخدام صيغة dev للتطوير)
+app.use(morgan('dev'));
 
 // مسار تجريبي (Test Route) للتأكد من عمل السيرفر
 app.get('/', (req, res) => {

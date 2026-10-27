@@ -25,5 +25,8 @@
     "express": "^5.3.0",
     "mongoose": "^9.11.4",
     "nodemon": "^3.1.14"
+  },
+  "dependencies": {
+    "morgan": "^1.12.1"
   }
 }
