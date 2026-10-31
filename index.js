@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import ApiError from './utils/apiError.js';
 import errorMiddleware from './middlewares/errorMiddleware.js';
+import userRouters from './routes/auth.routes.js';
 
 // 1. تعريف تطبيق Express أولاً
 const app = express();
@@ -10,12 +11,13 @@ const app = express();
 // 2. تفعيل الـ Middlewares الأساسية
 app.use(cors());         // لفتح السماحيات للربط مع الـ Frontend
 app.use(express.json()); // لتمكين السيرفر من قراءة بيانات JSON المرسلة في الـ Requests
-
+// ==========
+app.use(userRouters)
+// ==========
 // 3. تفعيل morgan لمراقبة الـ Requests (باستخدام صيغة dev للتطوير)
 if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));  // لمراقبة وطباعة طلبات HTTP في الـ Terminal أثناء التطوير
 }
-
 // 4. مسار تجريبي (Test Route) للتأكد من عمل السيرفر
 app.get('/', (req, res) => {
     res.status(200).json({ success: true, message: 'E-Commerce API is running successfully! 🚀' });
