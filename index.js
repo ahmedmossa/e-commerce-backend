@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import ApiError from './utils/apiError.js';
 import errorMiddleware from './middlewares/errorMiddleware.js';
+import productRoutes from './routes/product.routes.js';
 
 // 1. تعريف تطبيق Express أولاً
 const app = express();
@@ -16,6 +17,7 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));  // لمراقبة وطباعة طلبات HTTP في الـ Terminal أثناء التطوير
 }
 
+app.use('/api/v1/products', productRoutes);
 // 4. مسار تجريبي (Test Route) للتأكد من عمل السيرفر
 app.get('/', (req, res) => {
     res.status(200).json({ success: true, message: 'E-Commerce API is running successfully! 🚀' });
