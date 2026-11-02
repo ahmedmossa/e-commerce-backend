@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+ 
 export const OrderStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"];
 
 export const PaymentMethods = ["cash", "stripe", "paypal", "paymob"];
