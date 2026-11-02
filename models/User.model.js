@@ -89,7 +89,11 @@ const userSchema = mongoose.Schema({
     resetPasswordExpire: {
         type: Date,
         default: null
-    }
+    },
+
+    tokens: [{
+        type: String
+    }]
 })
 
 userSchema.pre('save', async function () {
