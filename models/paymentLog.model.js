@@ -1,14 +1,14 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const paymentLogSchema = new mongoose.Schema(
   {
     user: {
-      type: mongoose.Schema.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     order: {
-      type: mongoose.Schema.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Order',
       required: true,
     },
@@ -20,7 +20,12 @@ const paymentLogSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: true,
-    },
+      min: 1,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Payment amount must be a positive integer.',
+     },
+   }, 
     currency: {
       type: String,
       required: true,
@@ -38,11 +43,12 @@ const paymentLogSchema = new mongoose.Schema(
       type: String,
     },
     rawResponse: {
-      type: Object, 
+      type: Object,
+      default: undefined,
     },
   },
   { timestamps: true }
 );
 
 const PaymentLog = mongoose.model('PaymentLog', paymentLogSchema);
-module.exports = PaymentLog;  
+export default PaymentLog; 
