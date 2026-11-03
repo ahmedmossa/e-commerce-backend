@@ -1,19 +1,19 @@
-// استدعاء الموديلز الوهمية
-import { User } from '../mock-models/User.js';
-import { Order } from '../mock-models/Order.js';
-import { Product } from '../mock-models/Product.js';
+
+// import { User } from '../mock-models/User.js';
+// import { Order } from '../mock-models/Order.js';
+// import { Product } from '../mock-models/Product.js';
 
 // @desc    Get Dashboard Stats (Revenue, Orders, etc.)
 // @route   GET /admin/dashboard
 export const getDashboardStats = async (req, res) => {
   try {
-    // 🚧 هنا هتكتبي استعلامات الـ Aggregation لاحقاً
-    // مثال مبدئي:
+    // 🚧 هنا هتكتبي استعلامات الـ Aggregation الحقيقية لاحقاً
+    // مثال: 
     // const revenue = await Order.aggregate([...]);
 
     res.status(200).json({
       success: true,
-      message: 'Dashboard stats endpoint is ready. Waiting for real Aggregation.',
+      message: 'Dashboard stats ready (Skeleton)',
       data: { 
         totalRevenue: 0, 
         totalOrders: 0,
@@ -29,13 +29,14 @@ export const getDashboardStats = async (req, res) => {
 // @route   GET /admin/users
 export const getAllUsers = async (req, res) => {
   try {
-    // بنجيب البيانات من الموديل الوهمي
-    const users = await User.find().select('-password');
+    // 🚧 بانتظار User.model.js
+    // const users = await User.find().select('-password');
 
     res.status(200).json({
       success: true,
-      count: users.length,
-      data: users,
+      message: 'Users endpoint ready (Skeleton)',
+      count: 0,
+      data: [],
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -46,13 +47,14 @@ export const getAllUsers = async (req, res) => {
 // @route   GET /admin/orders
 export const getAllOrders = async (req, res) => {
   try {
-    // بنجيب البيانات من الموديل الوهمي
-    const orders = await Order.find().populate('user', 'name email');
+    // 🚧 بانتظار Order.model.js
+    // const orders = await Order.find().populate('user', 'name email');
     
     res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders,
+      message: 'Orders endpoint ready (Skeleton)',
+      count: 0,
+      data: [],
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -64,12 +66,13 @@ export const getAllOrders = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    // هنا هتكتبي كود تحديث الطلب باستخدام الموديل الوهمي
+    
+    // 🚧 بانتظار Order.model.js
     // const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
 
     res.status(200).json({
       success: true,
-      message: `Order status endpoint is ready. Mock update to: ${status}`,
+      message: `Order status updated to: ${status} (Skeleton)`,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

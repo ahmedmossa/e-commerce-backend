@@ -1,6 +1,7 @@
 import express from 'express';
-// بنستورد من الموك عشان الزميل لسه مخلصش
+
 import { protect, restrictTo } from '../middlewares/mock.auth.js'; 
+
 import { 
   getDashboardStats, 
   getAllUsers, 
@@ -10,7 +11,7 @@ import {
 
 const router = express.Router();
 
-// تأمين كل المسارات (باستخدام الموك)
+// تأمين المسارات
 router.use(protect);
 router.use(restrictTo('admin'));
 
