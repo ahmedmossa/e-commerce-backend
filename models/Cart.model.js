@@ -14,6 +14,10 @@ const cartItemSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: [1, "Quantity must be at least 1"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Quantity must be an integer",
+      },
       default: 1,
     },
   },
@@ -32,8 +36,14 @@ const cartSchema = new mongoose.Schema(
     items: { type: [cartItemSchema], default: [] },
     coupon: {
       code: { type: String, uppercase: true, trim: true },
-      discountType: { type: String, enum: ["percentage", "fixed"] },
-      discountValue: { type: Number, min: 0 },
+      discountType: {
+        type: String,
+        enum: ["percentage", "fixed"],
+      },
+      discountValue: {
+        type: Number,
+        min: 0,
+      },
     },
   },
   {
@@ -43,10 +53,31 @@ const cartSchema = new mongoose.Schema(
   }
 );
 
+cartSchema.pre("validate", function () {
+  const coupon = this.coupon;
+  if (!coupon || !coupon.code) return;
+
+  if (!coupon.discountType || coupon.discountValue == null) {
+    this.invalidate(
+      "coupon",
+      "Coupon code, discount type, and discount value are required together"
+    );
+    return;
+  }
+
+  if (coupon.discountType === "percentage" && coupon.discountValue > 100) {
+    this.invalidate(
+      "coupon.discountValue",
+      "Percentage discount cannot exceed 100"
+    );
+  }
+});
+
 
 cartSchema.virtual("subtotal").get(function () {
   return this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 });
+
 
 cartSchema.virtual("discountAmount").get(function () {
   if (!this.coupon || !this.coupon.code) return 0;
