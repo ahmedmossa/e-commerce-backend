@@ -15,6 +15,8 @@ const userSchema = mongoose.Schema({
         lowercase: true,
 
         validate(val) {
+            if (this?.$locals?.passwordAlreadyHashed) return true;
+
             if (!validator.isEmail(val)) {
                 throw new Error('Invalid email address. Please enter a valid email address.');
             }
@@ -25,6 +27,8 @@ const userSchema = mongoose.Schema({
         required: true,
         trim: true,
         validate(val) {
+            if (this?.$locals?.passwordAlreadyHashed) return true;
+
             if (!validator.isStrongPassword(val)) {
                 throw new Error('Password is too weak. It must contain at least 8 characters, including uppercase and lowercase letters, a number, and a symbol.');
             }
@@ -35,7 +39,8 @@ const userSchema = mongoose.Schema({
         trim: true,
         default: null,
         validate(val) {
-            if (!validator.isMobilePhone(val)) {
+            if (this?.$locals?.passwordAlreadyHashed && val) return true;
+            if (!validator.isMobilePhone(val) && val) {
                 throw new Error('phone is invalid');
             }
         }
@@ -116,3 +121,4 @@ userSchema.methods.toJSON = function () {
 
 const User = mongoose.model('User', userSchema)
 export default User;
+
