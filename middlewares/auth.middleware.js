@@ -7,6 +7,13 @@ const Auth = async (req, res, next) => {
         const decode = jwt.verify(token, process.env.JWT_SECRET)
 
         const user = await User.findOne({ tokens: token, _id: decode._id })
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+        
         req.token = token
         req.user = user
         next()

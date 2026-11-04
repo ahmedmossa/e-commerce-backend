@@ -12,23 +12,35 @@ const MAX_ATTEMPTS = 2;
 // Register
 export const Register = async (req, res) => {
     try {
-        const tempUser = new User(req.body);
-        //console.log(tempUser)
-        const userIsExisted = await User.findOne({ email: tempUser.email })
+        const { username, email, password, phone } = req.body;
+        const normalizedEmail = email.toLowerCase().trim()
+
+        const tempUser = new User({
+            username,
+            email: normalizedEmail,
+            password,
+            phone,
+        });
+
+        const userIsExisted = await User.findOne({ email: normalizedEmail })
         if (userIsExisted) {
-            throw Error("Email already exists")
+            return res.status(409).json({
+                success: false,
+                message: "Email already exists"
+            });
         }
 
         await tempUser.validate();
-        const passwordHash = await bcryptjs.hash(tempUser.password, 8);
+        const passwordHash = await bcryptjs.hash(password, 8);
 
         const otp = generateOTP();
         const otpHash = hashOTP(otp);
 
+
         await OTP.findOneAndReplace(
-            { email: tempUser.email },
+            { email: normalizedEmail },
             {
-                email: tempUser.email,
+                email: normalizedEmail,
                 otp: otpHash,
                 expiresAt: new Date(Date.now() + OTP_EXPIRE_MS),
                 attempts: 0,
@@ -38,7 +50,7 @@ export const Register = async (req, res) => {
         );
 
         await sendEmail({
-            to: tempUser.email,
+            to: normalizedEmail,
             subject: "Verify your email",
             text: `Your verification code is ${otp}. It expires in 5 minutes.`
         });
@@ -48,7 +60,7 @@ export const Register = async (req, res) => {
             message: "OTP sent successfully. Please check your email."
         });
     } catch (error) {
-        res.status(401).send({
+        res.status(500).send({
             message: error.message
         })
     }
@@ -72,7 +84,12 @@ export const Verify_OTP = async (req, res) => {
         }
 
         if (pending.expiresAt < new Date()) {
-            return res.status(400).json({ success: false, message: "OTP expired. Please request a new one." });
+            await OTP.deleteOne({ _id: pending._id });
+
+            return res.status(400).json({
+                success: false,
+                message: "OTP expired. Please register again."
+            });
         }
 
         if (pending.attempts >= MAX_ATTEMPTS) {
@@ -146,11 +163,12 @@ export const Login = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Login successful',
+            token
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: error.message
+            message: error.message,
         });
     }
 }
