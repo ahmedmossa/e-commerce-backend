@@ -55,9 +55,14 @@ const cartSchema = new mongoose.Schema(
 
 cartSchema.pre("validate", function () {
   const coupon = this.coupon;
-  if (!coupon || !coupon.code) return;
+  if (!coupon) return;
 
-  if (!coupon.discountType || coupon.discountValue == null) {
+  const hasCouponData =
+    coupon.code || coupon.discountType || coupon.discountValue != null;
+
+  if (!hasCouponData) return;
+
+  if (!coupon.code || !coupon.discountType || coupon.discountValue == null) {
     this.invalidate(
       "coupon",
       "Coupon code, discount type, and discount value are required together"
@@ -77,7 +82,6 @@ cartSchema.pre("validate", function () {
 cartSchema.virtual("subtotal").get(function () {
   return this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 });
-
 
 cartSchema.virtual("discountAmount").get(function () {
   if (!this.coupon || !this.coupon.code) return 0;
