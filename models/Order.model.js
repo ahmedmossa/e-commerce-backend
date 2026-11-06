@@ -51,11 +51,28 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: { type: String, enum: PaymentStatuses, default: "pending" },
     transactionId: { type: String },
 
-    subtotal: { type: Number, required: true },
-    shippingFee: { type: Number },
-    tax: { type: Number },
-    discount: { type: Number },
-    totalPrice: { type: Number, required: true },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    shippingFee: {
+      type: Number,
+      min: 0,
+    },
+    tax: {
+      type: Number,
+      min: 0,
+    },
+    discount: {
+      type: Number,
+      min: 0,
+    },
+    totalPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
     status: { type: String, enum: OrderStatuses, default: "pending" },
     paidAt: { type: Date },
