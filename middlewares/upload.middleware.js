@@ -33,12 +33,13 @@ const validateImageContent = async (req, res, next) => {
 
     const detectedType = await fileTypeFromBuffer(req.file.buffer);
 
-    if (
-      !detectedType ||
-      !allowedMimeTypes.includes(detectedType.mime)
-    ) {
-      return next(new Error("Invalid image content"));
-    }
+   if (
+  !detectedType ||
+  !allowedMimeTypes.includes(detectedType.mime) ||
+  detectedType.mime !== req.file.mimetype
+) {
+  return next(new Error("Invalid image content"));
+}
 
     req.file.detectedMimeType = detectedType.mime;
 
