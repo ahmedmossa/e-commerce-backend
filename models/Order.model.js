@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 export const OrderStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"];
@@ -63,6 +62,34 @@ const orderSchema = new mongoose.Schema({
     customerNote: { type: String, maxlength: 1000, trim: true },
     adminNote: { type: String, maxlength: 1000, trim: true },
 }, { timestamps: true });
+
+orderSchema.pre("save", function (next) {
+    const now = new Date();
+
+    if (this.isModified("status")) {
+        if (this.status === "delivered" && !this.deliveredAt) {
+            this.deliveredAt = now;
+            if (this.paymentMethod === "cash" && this.paymentStatus === "pending") {
+                this.paymentStatus = "paid";
+                this.paidAt = now;
+            }
+        } else if (this.status === "cancelled" && !this.cancelledAt) {
+            this.cancelledAt = now;
+        }
+    }
+
+    const expectedTotal = this.subtotal + (this.shippingFee || 0) + (this.tax || 0) - (this.discount || 0);
+
+    if (Math.abs(this.totalPrice - expectedTotal) > 0.01) {
+        return next(new Error("Total price does not match the calculated sum"));
+    }
+
+    if (this.totalPrice < 0) {
+        return next(new Error("Order total cannot be negative"));
+    }
+
+    next();
+});
 
 const Order = mongoose.model("Order", orderSchema);
 
