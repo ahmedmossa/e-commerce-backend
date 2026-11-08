@@ -71,3 +71,36 @@ export const cancelOrder = async (req, res, next) => {
         next(error);
     }
 };
+
+// دالة منفصلة لتأكيد الدفع (تُستخدم عبر Payment Service أو عند تأكيد التحصيل الفعلي)
+export const confirmOrderPayment = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { transactionId } = req.body;
+
+        const order = await Order.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        if (order.paymentStatus === "paid") {
+            return res.status(400).json({ message: "Order is already paid" });
+        }
+
+        order.paymentStatus = "paid";
+        order.paidAt = new Date();
+        if (transactionId) {
+            order.transactionId = transactionId;
+        }
+
+        await order.save();
+
+        return res.status(200).json({
+            message: "Payment confirmed successfully",
+            data: order,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
