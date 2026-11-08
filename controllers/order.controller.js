@@ -12,7 +12,6 @@ export const createOrder = async (req, res, next) => {
 
 export const getMyOrders = async (req, res, next) => {
     try {
-        // استخدام القيم المتحقق منها والمحولة من الـ Middleware
         const page = Number(req.validatedQuery.page) || 1;
         const limit = Number(req.validatedQuery.limit) || 10;
         const filter = { user: req.user._id };
@@ -48,7 +47,6 @@ export const getMyOrders = async (req, res, next) => {
 
 export const getMyOrderById = async (req, res, next) => {
     try {
-        // استخدام req.validatedParams بدلاً من req.params للتأكد من الأمان
         const orderId = req.validatedParams ? req.validatedParams.id : req.params.id;
         const order = await Order.findOne({ _id: orderId, user: req.user._id });
 
