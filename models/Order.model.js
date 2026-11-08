@@ -69,10 +69,6 @@ orderSchema.pre("save", function (next) {
     if (this.isModified("status")) {
         if (this.status === "delivered" && !this.deliveredAt) {
             this.deliveredAt = now;
-            if (this.paymentMethod === "cash" && this.paymentStatus === "pending") {
-                this.paymentStatus = "paid";
-                this.paidAt = now;
-            }
         } else if (this.status === "cancelled" && !this.cancelledAt) {
             this.cancelledAt = now;
         }
