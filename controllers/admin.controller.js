@@ -1,18 +1,6 @@
-import mongoose from 'mongoose';
 
-// 1. تعريف الموديلز (بنفس شكل الـ Schema اللي في seed.js)
-const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({ 
-  name: String, 
-  email: String, 
-  role: String 
-}));
-
-const Order = mongoose.models.Order || mongoose.model('Order', new mongoose.Schema({ 
-  totalPrice: Number, 
-  status: String, 
-  items: [{ product: String, name: String, quantity: Number }],
-  createdAt: { type: Date, default: Date.now }
-}));
+import User from '../models/User.model.js';
+import Order from '../models/Order.model.js';
 
 // @desc    Get Dashboard Stats
 // @route   GET /admin/dashboard
@@ -52,8 +40,8 @@ export const getDashboardStats = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    // 5. عدد العملاء
-    const totalCustomers = await User.countDocuments();
+   
+    const totalCustomers = await User.countDocuments({ role: 'customer' });
 
     res.status(200).json({
       success: true,
@@ -96,8 +84,44 @@ export const getAllOrders = async (req, res) => {
 // @route   PATCH /admin/orders/:id/status
 export const updateOrderStatus = async (req, res) => {
   try {
+    // بناءً على طلب المراجعة: التحديث الفعلي في الداتابيز
+    const { id } = req.params;
     const { status } = req.body;
-    res.status(200).json({ success: true, message: `Order status updated to: ${status}` });
+
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: `Order status updated to: ${status}`, 
+      data: order 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /admin/users/:id
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'User deleted successfully' 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
