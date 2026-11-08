@@ -22,7 +22,14 @@ const validate = (schema, property) => {
             });
         }
 
-        req[property] = value;
+        if (property === "body") {
+            req.validatedBody = value;
+        } else if (property === "query") {
+            req.validatedQuery = value;
+        } else if (property === "params") {
+            req.validatedParams = value;
+        }
+
         next();
     };
 };
@@ -36,4 +43,3 @@ router.get("/my/:id", protect, validate(orderIdParamSchema, "params"), getMyOrde
 router.patch("/my/:id/cancel", protect, validate(orderIdParamSchema, "params"), cancelOrder);
 
 export default router;
-
