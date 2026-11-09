@@ -29,11 +29,11 @@ const paymentLogSchema = new mongoose.Schema(
     currency: {
       type: String,
       required: true,
-      default: 'usd',
+      default: 'egp',
     },
     status: {
       type: String,
-      enum: ['pending', 'succeeded', 'failed', 'canceled'],
+      enum: ['pending', 'succeeded', 'failed', 'cancelled', 'refunded'],
       default: 'pending',
     },
     paymentMethodType: {
