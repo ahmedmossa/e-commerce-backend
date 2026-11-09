@@ -19,6 +19,12 @@ const uploadToCloudinary = (buffer, folder = "ecommerce") => {
           return reject(error);
         }
 
+        if (!result?.secure_url || !result?.public_id) {
+          return reject(
+            new Error("Cloudinary upload returned an invalid result")
+          );
+        }
+
         resolve({
           url: result.secure_url,
           public_id: result.public_id,
