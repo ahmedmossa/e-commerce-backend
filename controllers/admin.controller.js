@@ -1,4 +1,3 @@
-
 import User from '../models/User.model.js';
 import Order from '../models/Order.model.js';
 
@@ -6,17 +5,14 @@ import Order from '../models/Order.model.js';
 // @route   GET /admin/dashboard
 export const getDashboardStats = async (req, res) => {
   try {
-    // 1. إجمالي الإيرادات (بنجمع الأوردرات اللي حالتها delivered بس)
     const revenueResult = await Order.aggregate([
       { $match: { status: 'delivered' } },
       { $group: { _id: null, total: { $sum: '$totalPrice' } } }
     ]);
     const totalRevenue = revenueResult[0]?.total || 0;
 
-    // 2. عدد الطلبات الكلي
     const totalOrders = await Order.countDocuments();
 
-    // 3. أفضل 5 منتجات مبيعاً
     const topProducts = await Order.aggregate([
       { $unwind: '$items' },
       { $group: { 
@@ -28,7 +24,6 @@ export const getDashboardStats = async (req, res) => {
       { $limit: 5 }
     ]);
 
-    // 4. إحصائيات آخر 7 أيام
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const dailyRevenue = await Order.aggregate([
@@ -40,7 +35,7 @@ export const getDashboardStats = async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-   
+    // بناءً على طلب المراجعة: فلترة العملاء فقط
     const totalCustomers = await User.countDocuments({ role: 'customer' });
 
     res.status(200).json({
@@ -84,7 +79,6 @@ export const getAllOrders = async (req, res) => {
 // @route   PATCH /admin/orders/:id/status
 export const updateOrderStatus = async (req, res) => {
   try {
-    // بناءً على طلب المراجعة: التحديث الفعلي في الداتابيز
     const { id } = req.params;
     const { status } = req.body;
 
@@ -118,10 +112,23 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'User deleted successfully' 
-    });
+    res.status(200).json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete order
+// @route   DELETE /admin/orders/:id
+export const deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Order deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
