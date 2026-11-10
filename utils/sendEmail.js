@@ -1,8 +1,17 @@
-
 import "dotenv/config";
 import nodemailer from "nodemailer";
 
+const requiredEmailConfig = ['EMAIL_HOST','EMAIL_PORT','EMAIL_USER','EMAIL_PASS'];
+for (const key of requiredEmailConfig) {
+    if (!process.env[key]) {
+        throw new Error(`${key} is not configured`);
+    }
+}
 const port = Number(process.env.EMAIL_PORT);
+
+if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error('Invalid EMAIL_PORT configuration');
+}
 
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,

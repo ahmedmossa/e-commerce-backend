@@ -37,12 +37,16 @@ const userSchema = mongoose.Schema({
     phone: {
         type: String,
         trim: true,
-        default: null,
-        validate(val) {
-            if (this?.$locals?.passwordAlreadyHashed && val) return true;
-            if (!validator.isMobilePhone(val) && val) {
-                throw new Error('phone is invalid');
-            }
+        default:null,
+        validate: {
+            validator: function (val) {
+                if (!val) return true;
+
+                if (this?.$locals?.passwordAlreadyHashed) return true;
+
+                return validator.isMobilePhone(val);
+            },
+            message: "Phone number is invalid"
         }
     },
     avatar: {
@@ -110,12 +114,10 @@ userSchema.pre('save', async function () {
 
 userSchema.methods.toJSON = function () {
     const userObj = this.toObject()
-    delete userObj.email
     delete userObj.password
-    delete userObj.wishlist
-    delete userObj.isVerified
     delete userObj.resetPasswordToken
     delete userObj.resetPasswordExpire
+    delete userObj.tokens
     return userObj
 }
 

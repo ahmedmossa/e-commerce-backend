@@ -4,17 +4,24 @@ import generateToken from "../utils/generateTokens.js"
 import { generateOTP, hashOTP } from "../utils/generateOTP.js"
 import sendEmail from "../utils/sendEmail.js";
 import OTP from "../models/OTP.model.js";
+import validator from "validator"
 
 const OTP_EXPIRE_MS = 5 * 60 * 1000;
-const MAX_ATTEMPTS = 2;
-
+const MAX_ATTEMPTS = 3;
 
 // Register
 export const Register = async (req, res) => {
     try {
         const { username, email, password, phone } = req.body;
-        const normalizedEmail = email.toLowerCase().trim()
 
+        if (typeof email !== "string" || !email.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim()
         const tempUser = new User({
             username,
             email: normalizedEmail,
@@ -40,6 +47,7 @@ export const Register = async (req, res) => {
         await OTP.findOneAndReplace(
             { email: normalizedEmail },
             {
+                purpose: "register",
                 email: normalizedEmail,
                 otp: otpHash,
                 expiresAt: new Date(Date.now() + OTP_EXPIRE_MS),
@@ -125,14 +133,16 @@ export const Verify_OTP = async (req, res) => {
 // Login Function
 export const Login = async (req, res) => {
     try {
-        const userData = req.body
-        if (!userData.email || !userData.password) {
+        const { email, password } = req.body
+
+        if (!email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Email and Password is required'
             })
         }
-        const user = await User.findOne({ email: userData.email })
+        const normalizedEmail = email.toLowerCase().trim()
+        const user = await User.findOne({ email: normalizedEmail })
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -147,7 +157,7 @@ export const Login = async (req, res) => {
             })
         }
 
-        const isPasswordMatch = await bcryptjs.compare(userData.password, user.password)
+        const isPasswordMatch = await bcryptjs.compare(password, user.password)
         if (!isPasswordMatch) {
             return res.status(401).json({
                 success: false,
@@ -173,6 +183,29 @@ export const Login = async (req, res) => {
     }
 }
 
+// GET / me
+export const GET_me = async (req, res) => {
+    try {
+        const user = req.user
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            user: user
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+}
+
 // logOut function
 export const LogOut = async (req, res) => {
     try {
@@ -188,5 +221,285 @@ export const LogOut = async (req, res) => {
             success: false,
             message: "Require Auth"
         });
+    }
+}
+
+// forgotpassword - sendOTP
+export const ForgetPassword_sendOTP = async (req, res) => {
+    try {
+        const { email } = req.body
+        if (!email || typeof email !== "string" || !email.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim()
+        if (!validator.isEmail(normalizedEmail)) {
+            return res.status(401).json({
+                success: false,
+                messgage: 'Invalid email address. Please enter a valid email address.'
+            })
+        }
+
+        const userIsExisted = await User.findOne({ email: normalizedEmail })
+        if (!userIsExisted) {
+            return res.status(404).json({
+                success: false,
+                message: "Email is Not found"
+            });
+        }
+
+        const otp = generateOTP();
+        const otpHash = hashOTP(otp);
+
+        await OTP.findOneAndReplace(
+            { email: normalizedEmail },
+            {
+                email: normalizedEmail,
+                otp: otpHash,
+                expiresAt: new Date(Date.now() + OTP_EXPIRE_MS),
+                attempts: 0,
+                purpose: "forgotPassword",
+                userData: { email: normalizedEmail }
+            },
+            { upsert: true, returnDocument: true }
+        );
+
+        await sendEmail({
+            to: normalizedEmail,
+            subject: "Password Reset Verification Code",
+            text: `Your password reset verification code is ${otp}. This code will expire in 5 minutes. If you didn't request a password reset, please ignore this email.`
+        });
+
+        return res.status(200).json({
+            success: true,
+            messgae: "OTP sent successfully. Please check your email."
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+// forgetPassword - verifyOTP
+export const forgetPassword_verifyOTP = async (req, res) => {
+    try {
+        const { email, newPassword, otp } = req.body
+
+        if (typeof email !== "string" || !email.trim() || !otp || !newPassword) {
+            return res.status(400).json({ success: false, message: "Email, password and OTP are required" });
+        }
+
+        if (!validator.isStrongPassword(newPassword)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password is too weak. It must contain at least 8 characters, including uppercase and lowercase letters, a number, and a symbol.'
+            })
+        }
+
+        const normalizedEmail = email.toLowerCase().trim()
+        const user = await User.findOne({ email: normalizedEmail })
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Email or password invalid'
+            })
+        }
+
+        const pending = await OTP.findOne({ email: normalizedEmail, purpose: "forgotPassword" })
+        if (!pending) {
+            return res.status(400).json({
+                success: false,
+                message: "No pending registration found or it expired. Please try again."
+            });
+        }
+
+        if (pending.expiresAt < new Date()) {
+            await OTP.deleteOne({ _id: pending._id });
+
+            return res.status(400).json({
+                success: false,
+                message: "OTP expired. Please request a new OTP."
+            });
+        }
+
+        if (pending.attempts >= MAX_ATTEMPTS) {
+            await OTP.deleteOne({ _id: pending._id });
+            return res.status(429).json({
+                success: false,
+                message: "Maximum OTP verification attempts exceeded. Please request a new OTP."
+            });
+        }
+
+        if (pending.otp !== hashOTP(otp)) {
+            pending.attempts += 1;
+            await pending.save();
+            return res.status(400).json({ success: false, message: "Invalid OTP" });
+        }
+
+        user.password = newPassword
+        user.tokens = []
+        await user.save();
+
+        await OTP.deleteOne({ _id: pending._id });
+        return res.status(200).json({
+            success: true,
+            message: "Password has been reset successfully. You can now log in with your new password."
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+// changePassword - sendOTP
+export const changePassword_sendOTP = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body
+        const { email } = req.user
+
+        if (typeof currentPassword !== "string" || typeof newPassword !== "string" || !currentPassword.trim() || !newPassword.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Current password and new password are required."
+            });
+        }
+
+        if (!validator.isStrongPassword(newPassword)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password is too weak. It must contain at least 8 characters, including uppercase and lowercase letters, a number, and a symbol.'
+            })
+        }
+
+        if (!email || typeof email !== "string" || !email.trim()) {
+            return res.status(400).json({ success: false, message: "Email, password and new password are required" });
+        }
+
+        const user = await User.findOne({ email: email })
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "Email not found"
+            });
+        }
+
+        const isPasswordMatch = await bcryptjs.compare(currentPassword, user.password)
+        if (!isPasswordMatch) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid email or password'
+            });
+        }
+
+        const newPasswordHash = await bcryptjs.hash(newPassword, 8);
+        const otp = generateOTP();
+        const otpHash = hashOTP(otp);
+
+        await OTP.findOneAndReplace(
+            { email: email },
+            {
+                email: email,
+                otp: otpHash,
+                expiresAt: new Date(Date.now() + OTP_EXPIRE_MS),
+                attempts: 0,
+                purpose: "changePassword",
+                userData: { email, newPassword: newPasswordHash }
+            },
+            { upsert: true, returnDocument: true }
+        );
+
+        await sendEmail({
+            to: email,
+            subject: "Change Password Verification Code",
+            text: `Your password change verification code is ${otp}. This code will expire in 5 minutes. If you didn't request this password change, please ignore this email and secure your account immediately.`
+        });
+
+
+        // ============== THE END ===============
+        return res.status(200).json({
+            success: true,
+            messgae: "OTP sent successfully. Please check your email."
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+export const changePassword_verifyOTP = async (req, res) => {
+    try {
+        const { otp } = req.body
+        const { email } = req.user
+
+        if (!otp || typeof otp !== "string") {
+            return res.status(400).json({
+                success: false,
+                message: "OTP string is required"
+            })
+        }
+
+        const user = await User.findOne({ email: email })
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Email or password invalid'
+            })
+        }
+
+        const pending = await OTP.findOne({ email: email, purpose: "changePassword" })
+        if (!pending) {
+            return res.status(400).json({
+                success: false,
+                message: "No pending password change request found. Please request a new OTP."
+            });
+        }
+
+        if (pending.expiresAt < new Date()) {
+            await OTP.deleteOne({ _id: pending._id });
+            return res.status(400).json({
+                success: false,
+                message: "OTP expired. Please request a new OTP."
+            });
+        }
+
+        if (pending.attempts >= MAX_ATTEMPTS) {
+            await OTP.deleteOne({ _id: pending._id });
+            return res.status(429).json({
+                success: false,
+                message: "Maximum OTP verification attempts exceeded. Please request a new OTP."
+            });
+        }
+
+        if (pending.otp !== hashOTP(otp)) {
+            pending.attempts += 1;
+            await pending.save();
+            return res.status(400).json({ success: false, message: "Invalid OTP" });
+        }
+
+        user.password = pending.userData.newPassword
+        user.tokens = []
+        user.$locals.passwordAlreadyHashed = true;
+        await user.save()
+
+        await OTP.deleteOne({ _id: pending._id });
+
+        return res.status(200).json({
+            success: true,
+            message: "Password has been changed successfully. Please log in again with your new password."
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
     }
 }

@@ -23,6 +23,11 @@ const otpSchema = mongoose.Schema({
         required: true,
         expires: 0
     },
+    purpose: {
+        type: String,
+        enum: ["register", "forgotPassword" , "changePassword"],
+        required: true
+    },
     userData: {
         type: mongoose.Schema.Types.Mixed,
         required: true,
@@ -30,7 +35,8 @@ const otpSchema = mongoose.Schema({
     attempts: {
         type: Number,
         default: 0,
-        min: 0
+        min: 0,
+        max: 3
     }
 })
 

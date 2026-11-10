@@ -8,4 +8,5 @@ const generateToken = (_id) => {
     );
 };
 
+
 export default generateToken;

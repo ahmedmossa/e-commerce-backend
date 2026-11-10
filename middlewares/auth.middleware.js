@@ -3,7 +3,16 @@ import User from "../models/User.model.js"
 
 const Auth = async (req, res, next) => {
     try {
-        const token = req.header('Authorization').replace('Bearer ', "")
+        const authHeader = req.header('Authorization')
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authorization token is required'
+            });
+        }
+
+        const token = authHeader.replace('Bearer ',"")
+        
         const decode = jwt.verify(token, process.env.JWT_SECRET)
 
         const user = await User.findOne({ tokens: token, _id: decode._id })
@@ -13,7 +22,7 @@ const Auth = async (req, res, next) => {
                 message: "Unauthorized"
             });
         }
-        
+
         req.token = token
         req.user = user
         next()
