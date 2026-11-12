@@ -1,15 +1,13 @@
-
 import { check } from 'express-validator';
-
 import validatorMiddleware from '../middlewares/validator.middleware.js';
 
 // Validate product data before creating a product
 export const createProductValidator = [
-  check('title')
+  check('name')
     .notEmpty()
-    .withMessage('Product title is required')
-    .isLength({ min: 3, max: 100 })
-    .withMessage('Title must be between 3 and 100 characters'),
+    .withMessage('Product name is required')
+    .isLength({ min: 3, max: 200 })
+    .withMessage('Name must be between 3 and 200 characters'),
 
   check('description')
     .notEmpty()
@@ -17,21 +15,27 @@ export const createProductValidator = [
     .isLength({ min: 10 })
     .withMessage('Description must be at least 10 characters'),
 
+  check('shortDescription')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Short description cannot exceed 500 characters'),
+
   check('price')
     .notEmpty()
     .withMessage('Product price is required')
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number or zero'),
 
-  check('quantity')
+  check('discountPrice')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Discount price must be a positive number or zero'),
+
+  check('stock')
     .notEmpty()
-    .withMessage('Product quantity is required')
+    .withMessage('Product stock is required')
     .isInt({ min: 0 })
-    .withMessage('Quantity must be a non-negative integer'),
-
-
-
-
+    .withMessage('Stock must be a non-negative integer'),
 
   check('imageCover')
     .notEmpty()
@@ -42,6 +46,11 @@ export const createProductValidator = [
     .withMessage('Product category is required')
     .isMongoId()
     .withMessage('Invalid category ID'),
+
+  check('brand')
+    .optional()
+    .isMongoId()
+    .withMessage('Invalid brand ID format'),
 
   validatorMiddleware,
 ];
@@ -61,11 +70,11 @@ export const updateProductValidator = [
     .isMongoId()
     .withMessage('Invalid product ID'),
 
-  check('title')
+  check('name')
     .optional()
     .notEmpty()
-    .isLength({ min: 3, max: 100 })
-    .withMessage('Title must be between 3 and 100 characters'),
+    .isLength({ min: 3, max: 200 })
+    .withMessage('Name must be between 3 and 200 characters'),
 
   check('description')
     .optional()
@@ -73,20 +82,35 @@ export const updateProductValidator = [
     .isLength({ min: 10 })
     .withMessage('Description must be at least 10 characters'),
 
+  check('shortDescription')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Short description cannot exceed 500 characters'),
+
   check('price')
     .optional()
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number or zero'),
 
-  check('quantity')
+  check('discountPrice')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Discount price must be a positive number or zero'),
+
+  check('stock')
     .optional()
     .isInt({ min: 0 })
-    .withMessage('Quantity must be a non-negative integer'),
+    .withMessage('Stock must be a non-negative integer'),
 
   check('category')
     .optional()
     .isMongoId()
     .withMessage('Invalid category ID'),
+
+  check('brand')
+    .optional()
+    .isMongoId()
+    .withMessage('Invalid brand ID format'),
 
   validatorMiddleware,
 ];
