@@ -16,6 +16,5 @@ export const hashOTP = (otp) => {
     
     return crypto
         .createHmac("sha256",secret)
-        .update(otp)
-        .digest("hex");
+        .update(otp).digest("hex");
 };

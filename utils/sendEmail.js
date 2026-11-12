@@ -7,6 +7,7 @@ for (const key of requiredEmailConfig) {
         throw new Error(`${key} is not configured`);
     }
 }
+
 const port = Number(process.env.EMAIL_PORT);
 
 if (!Number.isInteger(port) || port <= 0 || port > 65535) {
