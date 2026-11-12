@@ -15,7 +15,16 @@ const paymentLogSchema = new mongoose.Schema(
     paymentIntentId: {
       type: String,
       required: true,
-      unique: true,
+      index: true,
+    },
+    stripeEventId: {
+     type: String,
+     unique: true,
+     sparse: true,
+    },
+    processedStripeEventIds: {
+      type: [String],
+      default: [],
     },
     amount: {
       type: Number,
