@@ -4,22 +4,14 @@ import generateToken from "../utils/generateTokens.js"
 import { generateOTP, hashOTP } from "../utils/generateOTP.js"
 import sendEmail from "../utils/sendEmail.js";
 import OTP from "../models/OTP.model.js";
-import validator from "validator"
 
-const OTP_EXPIRE_MS = 5 * 60 * 1000;
+const OTP_EXPIRE_MS = 50 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 
 // Register
 export const Register = async (req, res) => {
     try {
         const { username, email, password, phone } = req.body;
-
-        if (typeof email !== "string" || !email.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Email is required"
-            });
-        }
 
         const normalizedEmail = email.toLowerCase().trim()
         const tempUser = new User({
@@ -38,11 +30,10 @@ export const Register = async (req, res) => {
         }
 
         await tempUser.validate();
-        const passwordHash = await bcryptjs.hash(password, 8);
+        const passwordHash = await bcryptjs.hash(password, 10);
 
         const otp = generateOTP();
         const otpHash = hashOTP(otp);
-
 
         await OTP.findOneAndReplace(
             { email: normalizedEmail },
@@ -78,10 +69,6 @@ export const Register = async (req, res) => {
 export const Verify_OTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
-
-        if (!email || !otp) {
-            return res.status(400).json({ success: false, message: "Email and OTP are required" });
-        }
 
         const pending = await OTP.findOne({ email: email.toLowerCase().trim() });
         if (!pending) {
@@ -135,12 +122,6 @@ export const Login = async (req, res) => {
     try {
         const { email, password } = req.body
 
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and Password is required'
-            })
-        }
         const normalizedEmail = email.toLowerCase().trim()
         const user = await User.findOne({ email: normalizedEmail })
         if (!user) {
@@ -228,20 +209,8 @@ export const LogOut = async (req, res) => {
 export const ForgetPassword_sendOTP = async (req, res) => {
     try {
         const { email } = req.body
-        if (!email || typeof email !== "string" || !email.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Email is required"
-            });
-        }
 
         const normalizedEmail = email.toLowerCase().trim()
-        if (!validator.isEmail(normalizedEmail)) {
-            return res.status(401).json({
-                success: false,
-                messgage: 'Invalid email address. Please enter a valid email address.'
-            })
-        }
 
         const userIsExisted = await User.findOne({ email: normalizedEmail })
         if (!userIsExisted) {
@@ -289,17 +258,6 @@ export const ForgetPassword_sendOTP = async (req, res) => {
 export const forgetPassword_verifyOTP = async (req, res) => {
     try {
         const { email, newPassword, otp } = req.body
-
-        if (typeof email !== "string" || !email.trim() || !otp || !newPassword) {
-            return res.status(400).json({ success: false, message: "Email, password and OTP are required" });
-        }
-
-        if (!validator.isStrongPassword(newPassword)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password is too weak. It must contain at least 8 characters, including uppercase and lowercase letters, a number, and a symbol.'
-            })
-        }
 
         const normalizedEmail = email.toLowerCase().trim()
         const user = await User.findOne({ email: normalizedEmail })
@@ -364,23 +322,6 @@ export const changePassword_sendOTP = async (req, res) => {
         const { currentPassword, newPassword } = req.body
         const { email } = req.user
 
-        if (typeof currentPassword !== "string" || typeof newPassword !== "string" || !currentPassword.trim() || !newPassword.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Current password and new password are required."
-            });
-        }
-
-        if (!validator.isStrongPassword(newPassword)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password is too weak. It must contain at least 8 characters, including uppercase and lowercase letters, a number, and a symbol.'
-            })
-        }
-
-        if (!email || typeof email !== "string" || !email.trim()) {
-            return res.status(400).json({ success: false, message: "Email, password and new password are required" });
-        }
 
         const user = await User.findOne({ email: email })
         if (!user) {
@@ -394,11 +335,11 @@ export const changePassword_sendOTP = async (req, res) => {
         if (!isPasswordMatch) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid email or password'
+                message: "Current password is incorrect"
             });
         }
 
-        const newPasswordHash = await bcryptjs.hash(newPassword, 8);
+        const newPasswordHash = await bcryptjs.hash(newPassword, 10);
         const otp = generateOTP();
         const otpHash = hashOTP(otp);
 
@@ -439,13 +380,6 @@ export const changePassword_verifyOTP = async (req, res) => {
     try {
         const { otp } = req.body
         const { email } = req.user
-
-        if (!otp || typeof otp !== "string") {
-            return res.status(400).json({
-                success: false,
-                message: "OTP string is required"
-            })
-        }
 
         const user = await User.findOne({ email: email })
         if (!user) {
