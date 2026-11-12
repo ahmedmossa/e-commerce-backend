@@ -44,6 +44,23 @@ export const getProduct = asyncHandler(async (req, res, next) => {
 // Create a new product
 // POST /api/v1/products
 export const createProduct = asyncHandler(async (req, res, next) => {
+  // 1. ربط المنتج بالـ Admin المسجل حالياً من خلال توكن الحماية
+  req.body.createdBy = req.user._id;
+
+  // 2. معالجة الصور المرفوعة عبر Multer/Cloudinary
+  if (req.files) {
+    if (req.files.imageCover) {
+      req.body.imageCover = req.files.imageCover[0].path;
+    }
+    if (req.files.images) {
+      req.body.images = req.files.images.map((file) => ({
+        url: file.path,
+        public_id: file.filename,
+      }));
+    }
+  }
+
+  // 3. إنشاء المنتج في قاعدة البيانات
   const newProduct = await Product.create(req.body);
 
   res.status(201).json({
@@ -86,12 +103,6 @@ export const deleteProduct = asyncHandler(async (req, res, next) => {
   if (!product) {
     return next(new ApiError('Product not found for deletion', 404));
   }
-
-  // TODO: Add Cloudinary image deletion logic here using product.images or product.imageCover if needed
-  // Example: 
-  // for (const img of product.images) {
-  //   await cloudinary.uploader.destroy(img.public_id);
-  // }
 
   await product.deleteOne();
 
