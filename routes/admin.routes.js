@@ -1,31 +1,32 @@
 import express from 'express';
-import { protect } from '../middlewares/mock.auth.js'; 
-import { restrictTo } from '../middlewares/mock.auth.js';
+import { Auth } from '../middlewares/auth.middleware.js';
+import { adminOnly } from '../middlewares/role.middleware.js';
 import { 
   getDashboardStats, 
   getAllUsers, 
-  getAllOrders, 
-  updateOrderStatus,
+  getUserById,
+  updateUser,
   deleteUser,
+  getAllOrders, 
+  getOrderById,
+  updateOrderStatus,
   deleteOrder
 } from '../controllers/admin.controller.js';
 
 const router = express.Router();
 
 // تأمين المسارات
-router.use(protect);
-router.use(restrictTo('admin'));
-
-// المسارات
-router.get('/test', (req, res) => {
-  res.status(200).json({ message: 'Admin route is working!' });
-});
+router.use(Auth);
+router.use(adminOnly);
 
 router.get('/dashboard', getDashboardStats);
 router.get('/users', getAllUsers);
-router.get('/orders', getAllOrders);
-router.patch('/orders/:id/status', updateOrderStatus);
+router.get('/users/:id', getUserById);
+router.patch('/users/:id', updateUser);
 router.delete('/users/:id', deleteUser);
+router.get('/orders', getAllOrders);
+router.get('/orders/:id', getOrderById);
+router.patch('/orders/:id/status', updateOrderStatus);
 router.delete('/orders/:id', deleteOrder);
 
 export default router;
