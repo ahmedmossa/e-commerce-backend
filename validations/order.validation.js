@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { OrderStatuses, PaymentMethods, PaymentStatuses } from "../models/Order.model.js";
+import {OrderStatuses,PaymentMethods,PaymentStatuses,} from "../models/Order.model.js";
 
 const objectId = Joi.string().hex().length(24);
 
@@ -14,8 +14,15 @@ const shippingAddressSchema = Joi.object({
 
 export const createOrderSchema = Joi.object({
     shippingAddress: shippingAddressSchema,
-    paymentMethod: Joi.string().valid(...PaymentMethods),
-    customerNote: Joi.string().trim().max(1000).allow(""),
+
+    paymentMethod: Joi.string()
+        .valid(...PaymentMethods)
+        .default("cash"),
+
+    customerNote: Joi.string()
+        .trim()
+        .max(1000)
+        .allow(""),
 });
 
 export const orderIdParamSchema = Joi.object({
@@ -23,23 +30,55 @@ export const orderIdParamSchema = Joi.object({
 });
 
 export const myOrdersQuerySchema = Joi.object({
-    page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(10),
-    status: Joi.string().valid(...OrderStatuses),
+    page: Joi.number()
+        .integer()
+        .min(1)
+        .default(1),
+
+    limit: Joi.number()
+        .integer()
+        .min(1)
+        .max(100)
+        .default(10),
+
+    status: Joi.string()
+        .valid(...OrderStatuses),
 });
 
 export const adminOrdersQuerySchema = Joi.object({
-    page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(10),
-    status: Joi.string().valid(...OrderStatuses),
-    paymentStatus: Joi.string().valid(...PaymentStatuses),
+    page: Joi.number()
+        .integer()
+        .min(1)
+        .default(1),
+
+    limit: Joi.number()
+        .integer()
+        .min(1)
+        .max(100)
+        .default(10),
+
+    status: Joi.string()
+        .valid(...OrderStatuses),
+
+    paymentStatus: Joi.string()
+        .valid(...PaymentStatuses),
+
     from: Joi.date(),
-    to: Joi.date().min(Joi.ref("from")),
-    sort: Joi.string().valid("newest", "oldest", "price-high", "price-low"),
+
+    to: Joi.date()
+        .min(Joi.ref("from")),
+
+    sort: Joi.string()
+        .valid("newest", "oldest", "price-high", "price-low"),
 });
 
 export const updateOrderStatusSchema = Joi.object({
-    status: Joi.string().valid(...OrderStatuses).required(),
-    adminNote: Joi.string().trim().max(1000).allow(""),
-});
+    status: Joi.string()
+        .valid(...OrderStatuses)
+        .required(),
 
+    adminNote: Joi.string()
+        .trim()
+        .max(1000)
+        .allow(""),
+});
