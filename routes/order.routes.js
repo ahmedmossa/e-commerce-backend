@@ -1,8 +1,8 @@
 import express from "express";
 
-import { createOrder, getMyOrders, getMyOrderById, cancelOrder } from "../controllers/order.controller.js";
+import {createOrder,getMyOrders,getMyOrderById,cancelOrder,} from "../controllers/order.controller.js";
 
-import { createOrderSchema, orderIdParamSchema, myOrdersQuerySchema } from "../validations/order.validation.js";
+import {createOrderSchema,orderIdParamSchema,myOrdersQuerySchema,} from "../validations/order.validation.js";
 
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -18,7 +18,9 @@ const validate = (schema, property) => {
         if (error) {
             return res.status(400).json({
                 message: "Validation error",
-                errors: error.details.map((detail) => detail.message),
+                errors: error.details.map(
+                    (detail) => detail.message
+                ),
             });
         }
 
@@ -34,12 +36,32 @@ const validate = (schema, property) => {
     };
 };
 
-router.post("/", protect, validate(createOrderSchema, "body"), createOrder);
+router.post(
+    "/",
+    protect,
+    validate(createOrderSchema, "body"),
+    createOrder
+);
 
-router.get("/my", protect, validate(myOrdersQuerySchema, "query"), getMyOrders);
+router.get(
+    "/my",
+    protect,
+    validate(myOrdersQuerySchema, "query"),
+    getMyOrders
+);
 
-router.get("/my/:id", protect, validate(orderIdParamSchema, "params"), getMyOrderById);
+router.get(
+    "/my/:id",
+    protect,
+    validate(orderIdParamSchema, "params"),
+    getMyOrderById
+);
 
-router.patch("/my/:id/cancel", protect, validate(orderIdParamSchema, "params"), cancelOrder);
+router.patch(
+    "/my/:id/cancel",
+    protect,
+    validate(orderIdParamSchema, "params"),
+    cancelOrder
+);
 
 export default router;
