@@ -2,6 +2,7 @@ import "dotenv/config";
 import nodemailer from "nodemailer";
 
 const requiredEmailConfig = ['EMAIL_HOST','EMAIL_PORT','EMAIL_USER','EMAIL_PASS'];
+
 for (const key of requiredEmailConfig) {
     if (!process.env[key]) {
         throw new Error(`${key} is not configured`);

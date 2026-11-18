@@ -7,5 +7,4 @@ const generateToken = (_id) => {
         { expiresIn: process.env.JWT_EXPIRE }
     );
 };
-
 export default generateToken;

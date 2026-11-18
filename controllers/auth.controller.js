@@ -5,7 +5,7 @@ import { generateOTP, hashOTP } from "../utils/generateOTP.js"
 import sendEmail from "../utils/sendEmail.js";
 import OTP from "../models/OTP.model.js";
 
-const OTP_EXPIRE_MS = 5 * 60 * 1000;
+const OTP_EXPIRE_MS = 55 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 
 // Register
@@ -36,7 +36,7 @@ export const Register = async (req, res) => {
         const otpHash = hashOTP(otp);
 
         await OTP.findOneAndReplace(
-            { email: normalizedEmail },
+            { email: normalizedEmail , purpose: "register" },
             {
                 purpose: "register",
                 email: normalizedEmail,
@@ -70,7 +70,11 @@ export const Verify_OTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
-        const pending = await OTP.findOne({ email: email.toLowerCase().trim() });
+        const pending = await OTP.findOne({
+            email: email.toLowerCase().trim(),
+            purpose: "register",
+        });
+
         if (!pending) {
             return res.status(400).json({
                 success: false,
@@ -123,7 +127,7 @@ export const Login = async (req, res) => {
         const { email, password } = req.body
 
         const normalizedEmail = email.toLowerCase().trim()
-        const user = await User.findOne({ email: normalizedEmail })
+        const user = await User.findOne({ email: normalizedEmail})
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -205,7 +209,7 @@ export const LogOut = async (req, res) => {
 }
 
 // forgotpassword - sendOTP
-export const ForgetPassword_sendOTP = async (req, res) => {
+export const forgotPassword_sendOTP = async (req, res) => {
     try {
         const { email } = req.body
 
@@ -223,7 +227,7 @@ export const ForgetPassword_sendOTP = async (req, res) => {
         const otpHash = hashOTP(otp);
 
         await OTP.findOneAndReplace(
-            { email: normalizedEmail },
+            { email: normalizedEmail , purpose: "forgotPassword" },
             {
                 email: normalizedEmail,
                 otp: otpHash,
@@ -243,7 +247,7 @@ export const ForgetPassword_sendOTP = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            messgae: "OTP sent successfully. Please check your email."
+            message: "OTP sent successfully. Please check your email."
         })
 
     } catch (error) {
@@ -253,8 +257,9 @@ export const ForgetPassword_sendOTP = async (req, res) => {
         })
     }
 }
+
 // forgetPassword - verifyOTP
-export const forgetPassword_verifyOTP = async (req, res) => {
+export const forgotPassword_verifyOTP = async (req, res) => {
     try {
         const { email, newPassword, otp } = req.body
 
@@ -318,9 +323,8 @@ export const forgetPassword_verifyOTP = async (req, res) => {
 // changePassword - sendOTP
 export const changePassword_sendOTP = async (req, res) => {
     try {
-        const { currentPassword, newPassword } = req.body
+        const { currentPassword } = req.body
         const { email } = req.user
-
 
         const user = await User.findOne({ email: email })
         if (!user) {
@@ -338,19 +342,18 @@ export const changePassword_sendOTP = async (req, res) => {
             });
         }
 
-        const newPasswordHash = await bcryptjs.hash(newPassword, 10);
         const otp = generateOTP();
         const otpHash = hashOTP(otp);
 
         await OTP.findOneAndReplace(
-            { email: email },
+            { email: email ,purpose:"changePassword"},
             {
                 email: email,
                 otp: otpHash,
                 expiresAt: new Date(Date.now() + OTP_EXPIRE_MS),
                 attempts: 0,
                 purpose: "changePassword",
-                userData: { email, newPassword: newPasswordHash }
+                userData: { email }
             },
             { upsert: true, returnDocument: true }
         );
@@ -365,7 +368,7 @@ export const changePassword_sendOTP = async (req, res) => {
         // ============== THE END ===============
         return res.status(200).json({
             success: true,
-            messgae: "OTP sent successfully. Please check your email."
+            message: "OTP sent successfully. Please check your email."
         })
     } catch (error) {
         return res.status(500).json({
@@ -375,9 +378,10 @@ export const changePassword_sendOTP = async (req, res) => {
     }
 }
 
+// changePassword - verifyOTP
 export const changePassword_verifyOTP = async (req, res) => {
     try {
-        const { otp } = req.body
+        const { otp, newPassword } = req.body
         const { email } = req.user
 
         const user = await User.findOne({ email: email })
@@ -418,9 +422,13 @@ export const changePassword_verifyOTP = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid OTP" });
         }
 
-        user.password = pending.userData.newPassword
+        const newPasswordHash = await bcryptjs.hash(newPassword, 10);
+        user.password = newPasswordHash
+
         user.tokens = []
+
         user.$locals.passwordAlreadyHashed = true;
+
         await user.save()
 
         await OTP.deleteOne({ _id: pending._id });

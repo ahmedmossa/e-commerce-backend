@@ -34,11 +34,11 @@ export const loginValidation = Joi.object({
 });
 
 // Forget Password Validation
-export const forgetPasswordValidation = Joi.object({
+export const forgotPasswordValidation = Joi.object({
     email: emailValidation
 });
 
-export const forgetPasswordValidation_verifyOTP = Joi.object({
+export const forgotPasswordValidation_verifyOTP = Joi.object({
     email: emailValidation,
     newPassword: strongPasswordValidation,
     otp: OTP_validation
@@ -47,11 +47,11 @@ export const forgetPasswordValidation_verifyOTP = Joi.object({
 // Change Password Validation
 export const changePasswordValidation = Joi.object({
     currentPassword: Joi.string().required(),
-    newPassword: strongPasswordValidation
 });
 
 export const changePassword_OTP_Validation = Joi.object({
-    otp: OTP_validation
+    otp: OTP_validation,
+    newPassword: strongPasswordValidation
 });
 
 

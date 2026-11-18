@@ -13,7 +13,7 @@ export const hashOTP = (otp) => {
     if (!secret) {
         throw new Error("OTP_SECRET is not configured");
     }
-    
+
     return crypto
         .createHmac("sha256",secret)
         .update(otp).digest("hex");

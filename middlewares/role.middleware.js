@@ -8,8 +8,8 @@ export const adminOnly = (req, res, next) => {
                 message: 'You are not allowed to access this resource.'
             });
         }
-
         next();
+
     } catch (error) {
         return res.status(500).json({
             success: false,
