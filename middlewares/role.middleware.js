@@ -1,10 +1,19 @@
+export const adminOnly = (req, res, next) => {
+    try {
+        const user = req.user;
 
-export const allowedTo = (...roles) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) {
-    return res.status(403).json({
-      status: 'fail',
-      message: 'You are not allowed to perform this action',
-    });
-  }
-  next();
+        if (user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not allowed to access this resource.'
+            });
+        }
+        next();
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error.'
+        });
+    }
 };

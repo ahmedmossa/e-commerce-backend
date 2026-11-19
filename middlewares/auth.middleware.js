@@ -1,48 +1,37 @@
-import asyncHandler from 'express-async-handler';
-import jwt from 'jsonwebtoken';
-import User from '../models/User.model.js';
+import jwt from "jsonwebtoken"
+import User from "../models/User.model.js"
 
-// @desc    1. Authentication (Protect routes)
-export const protect = asyncHandler(async (req, res, next) => {
-  // 1) Check if token exist, if exist get it
-  let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-  if (!token) {
-    return res.status(401).json({
-      message: 'You are not logged in, Please login to get access this route',
-    });
-  }
+const Auth = async (req, res, next) => {
+    try {
+        const authHeader = req.header('Authorization')
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authorization token is required'
+            });
+        }
 
-  // 2) Verify token (no change happen, expired token)
-  const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const token = authHeader.replace('Bearer ',"")
+        
+        const decode = jwt.verify(token, process.env.JWT_SECRET)
 
-  // 3) Check if user exists
-  const currentUser = await User.findById(decoded.userId);
-  if (!currentUser) {
-    return res.status(401).json({
-      message: 'The user that belong to this token no longer exist',
-    });
-  }
+        const user = await User.findOne({ tokens: token, _id: decode._id })
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
 
-  // 4) Check if user change his password after token created
-  if (currentUser.passwordChangedAt) {
-    const passChangedTimestamp = parseInt(
-      currentUser.passwordChangedAt.getTime() / 1000,
-      10
-    );
-    // Password changed after token created (Error)
-    if (passChangedTimestamp > decoded.iat) {
-      return res.status(401).json({
-        message: 'User recently changed his password, please login again..',
-      });
+        req.token = token
+        req.user = user
+        next()
+    } catch (error) {
+        res.status(401).send({
+            success: false,
+            message: 'Require Auth'
+        });
     }
-  }
+}
 
-  req.user = currentUser;
-  next();
-})
+export default Auth
