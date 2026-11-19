@@ -1,8 +1,22 @@
-import express from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
+/**
+ * ============================================================================
+ * File: index.js
+ * Track: Track 01 - Infrastructure & Core Setup
+ * Owner: Ahmed Ibrahim Mossa (Team Leader)
+ * Description: Express application configuration, global middlewares, Stripe
+ *              webhook raw body handling, health endpoint, feature route
+ *              mounting aligned with Academy docs & Swagger, 404 handler, and
+ *              centralized error handler.
+ * ============================================================================
+ */
 
-// 1. استيراد مسارات الروتس (Routes) الخاصة بالفريق
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import ApiError from './utils/apiError.js';
+import errorMiddleware from './middlewares/errorMiddleware.js';
+
+// Track route modules (enable as each track delivers & coordinates):
 // import authRoutes from './routes/auth.routes.js';
 // import userRoutes from './routes/user.routes.js';
 // import productRoutes from './routes/product.routes.js';
@@ -11,71 +25,100 @@ import cors from 'cors';
 // import cartRoutes from './routes/cart.routes.js';
 // import wishlistRoutes from './routes/wishlist.routes.js';
 // import orderRoutes from './routes/order.routes.js';
-// import paymentRoutes from './routes/payment.routes.js'; // <-- تم تفعيل روت الدفع
+// import paymentRoutes from './routes/payment.routes.js';
 // import adminRoutes from './routes/admin.routes.js';
 
-// استيراد معالج الأخطاء
-import ApiError from './utils/apiError.js';
-import errorMiddleware from './middlewares/errorMiddleware.js';
-
-// إنشاء تطبيق Express
 const app = express();
 
-// ==========================================
-// 1. Stripe Webhook (يجب أن يكون قبل express.json العام)
-// ==========================================
-// ملاحظة: مسار الـ webhook يحتاج إلى Raw Body للتحقق من التوقيع (Stripe Signature)
-// يمكنك استقباله هنا أو داخل paymentRoutes مع تحديد express.raw() للراوت الخاص به حصرياً.
-app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
+// Hide Express framework fingerprint header
+app.disable('x-powered-by');
 
-// ==========================================
-// 2. Middlewares (الإعدادات الوسيطة الأساسية)
-// ==========================================
-app.use(cors());
-app.use(express.json({ limit: '10kb' })); // تحديد حجم البيانات المرسلة للـ Body لباقي الـ Routes
+// Parse optional comma-separated allowlist from environment variables
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  : null;
 
-// تفعيل Morgan لمراقبة الطلبات أثناء التطوير فقط
+// ============================================================================
+// 1. Stripe Webhook Raw Body Middleware (Must precede express.json())
+// ============================================================================
+// Preserves raw Buffer payload for Stripe signature verification.
+// Keep aligned with Track 09 webhook route path and idempotency handling.
+app.use(
+  '/payment/webhook',
+  express.raw({ type: 'application/json' })
+);
+
+// ============================================================================
+// 2. Global Middlewares
+// ============================================================================
+app.use(
+  cors(
+    allowedOrigins?.length
+      ? {
+          origin(origin, callback) {
+            if (!origin || allowedOrigins.includes(origin)) {
+              return callback(null, true);
+            }
+            return callback(new ApiError('Not allowed by CORS policy', 403));
+          },
+          credentials: true,
+        }
+      : undefined
+  )
+);
+
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
 if (process.env.NODE_ENV === 'development') {
-    app.use(morgan('dev'));
+  app.use(morgan('dev'));
 }
 
-// ==========================================
-// 3. Test Route (مسار تجريبي للتأكد من السيرفر)
-// ==========================================
+// ============================================================================
+// 3. Health & Root Check Endpoints
+// ============================================================================
 app.get('/', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'E-Commerce API is running successfully for Core Team 6! 🚀',
-    });
+  res.status(200).json({
+    success: true,
+    message: 'E-Commerce API is running successfully for Core Team 6',
+  });
 });
 
-// ==========================================
-// 4. API Routes (ربط مسارات النظام بالكامل)
-// ==========================================
-const API_VERSION = '/api/v1';
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+  });
+});
 
-// app.use(`${API_VERSION}/auth`, authRoutes);
-// app.use(`${API_VERSION}/users`, userRoutes);
-// app.use(`${API_VERSION}/products`, productRoutes);
-// app.use(`${API_VERSION}/categories`, categoryRoutes);
-// app.use(`${API_VERSION}/brands`, brandRoutes);
-// app.use(`${API_VERSION}/cart`, cartRoutes);
-// app.use(`${API_VERSION}/wishlist`, wishlistRoutes);
-// app.use(`${API_VERSION}/orders`, orderRoutes);
-// app.use(`${API_VERSION}/payment`, paymentRoutes); // <-- ربط مسارات الدفع والـ Webhook
-// app.use(`${API_VERSION}/admin`, adminRoutes);
+// ============================================================================
+// 4. Feature Routes Mounting (Aligned with Academy & Swagger Contracts)
+// ============================================================================
+// app.use('/auth', authRoutes);
+// app.use('/users', userRoutes);
+// app.use('/products', productRoutes);
+// app.use('/categories', categoryRoutes);
+// app.use('/brands', brandRoutes);
+// app.use('/carts', cartRoutes);
+// app.use('/wishlists', wishlistRoutes);
+// app.use('/orders', orderRoutes);
+// app.use('/payment', paymentRoutes);
+// app.use('/admin', adminRoutes);
 
-// ==========================================
-// 5. Handle Unhandled Routes (التعامل مع المسارات غير الموجودة)
-// ==========================================
+// ============================================================================
+// 5. Undefined Routes Handler (404)
+// ============================================================================
 app.use((req, res, next) => {
-    next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
+  next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
 });
 
-// ==========================================
-// 6. Global Error Handling Middleware (معالج الأخطاء العام)
-// ==========================================
+// ============================================================================
+// 6. Centralized Error Handler (Always registered last)
+// ============================================================================
 app.use(errorMiddleware);
 
-// تصدير التطبيق ليتم استخدامه في ملف التشغيل (server.js)
 export default app;
