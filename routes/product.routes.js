@@ -15,14 +15,11 @@ import {
   deleteProductValidator,
 } from '../validations/product.validation.js';
 
-import { protect, allowedTo } from '../middlewares/auth.middleware.js';
 import { uploadMixOfImages } from '../middlewares/upload.middleware.js';
-import reviewRouter from './review.routes.js';
-
+import { protect } from '../middlewares/auth.middleware.js';
+import { allowedTo } from '../middlewares/role.middleware.js';
 const router = express.Router();
 
-// Mount Review Routes (Nested Route)
-router.use('/:productId/reviews', reviewRouter);
 
 // Public Routes
 // GET /api/v1/products
