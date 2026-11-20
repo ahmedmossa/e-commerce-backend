@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 export const OrderStatuses = ["pending","confirmed","processing","shipped","delivered","cancelled","returned"];
 export const PaymentMethods = ["cash","stripe","paypal","paymob"];
 export const PaymentStatuses = ["pending","paid","failed","refunded"];
-
+ 
 export const AllowedStatusTransitions = {
     pending: ["confirmed","cancelled"],
     confirmed: ["processing","cancelled"],
