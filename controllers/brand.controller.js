@@ -7,7 +7,7 @@ import cloudinary from "../config/cloudinary.js";
 export const createBrand = async (req, res) => {
   try {
     const { name, description } = req.body;
-    if (!name || !name.trim()) {
+    if (typeof name !== "string" || !name.trim()) {
   return res.status(400).json({
     message: "Brand name is required",
   });
@@ -23,6 +23,12 @@ export const createBrand = async (req, res) => {
       req.file.buffer,
       "brands"
     );
+    
+if (!image?.url || !image?.public_id) {
+return res.status(500).json({
+message: "Image upload failed",
+});
+}
 
     const brand = await Brand.create({
       name,
@@ -117,34 +123,67 @@ export const updateBrand = async (req, res) => {
 
     const { name, description } = req.body;
 
-    if (name !== undefined) brand.name = name;
-    if (description !== undefined) brand.description = description;
+   if (name !== undefined) {
+  if (typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({
+      message: "Brand name must be a non-empty string",
+    });
+  }
 
-    let oldPublicId;
+  brand.name = name.trim();
+}
 
-    if (req.file) {
-      const image = await uploadToCloudinary(
-        req.file.buffer,
-        "brands"
+if (description !== undefined) {
+  brand.description = description;
+}
+ let oldPublicId;
+let newPublicId;
+
+if (req.file) {
+  const image = await uploadToCloudinary(
+    req.file.buffer,
+    "brands"
+  );
+
+  if (!image?.url || !image?.public_id) {
+    return res.status(500).json({
+      message: "Image upload failed",
+    });
+  }
+
+  newPublicId = image.public_id;
+  oldPublicId = brand.image?.public_id;
+
+  brand.image = {
+    url: image.url,
+    public_id: image.public_id,
+  };
+}
+
+try {
+  await brand.save();
+} catch (error) {
+  if (newPublicId) {
+    try {
+      await cloudinary.uploader.destroy(newPublicId);
+    } catch (cleanupError) {
+      console.error(
+        "Failed to delete new image after database save failure:",
+        cleanupError
       );
-
-      oldPublicId = brand.image.public_id;
-
-      brand.image = {
-        url: image.url,
-        public_id: image.public_id,
-      };
     }
+  }
 
-    await brand.save();
+  throw error;
+}
 
-    if (oldPublicId) {
-      try {
-        await cloudinary.uploader.destroy(oldPublicId);
-      } catch (error) {
-        console.error("Failed to delete old brand image:", error);
-      }
-    }
+if (oldPublicId) {
+  try {
+    await cloudinary.uploader.destroy(oldPublicId);
+  } catch (error) {
+    console.error("Failed to delete old brand image:", error);
+  }
+}
 
     return res.status(200).json({
       message: "Brand updated successfully",
@@ -182,13 +221,15 @@ export const deleteBrand = async (req, res) => {
       });
     }
 
-    try {
-      await cloudinary.uploader.destroy(brand.image.public_id);
-    } catch (error) {
-      console.error("Failed to delete brand image:", error);
-    }
-
     await Brand.findByIdAndDelete(id);
+
+    if (brand.image?.public_id) {
+      try {
+        await cloudinary.uploader.destroy(brand.image.public_id);
+      } catch (error) {
+        console.error("Failed to delete brand image:", error);
+      }
+    }
 
     return res.status(200).json({
       message: "Brand deleted successfully",

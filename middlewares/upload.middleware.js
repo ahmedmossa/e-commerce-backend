@@ -1,5 +1,6 @@
 import multer from "multer";
 import { fileTypeFromBuffer } from "file-type";
+import sharp from "sharp"
 
 const storage = multer.memoryStorage();
 
@@ -22,6 +23,7 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024,
+    files:5,
   },
 });
 
@@ -42,6 +44,7 @@ const validateImageContent = async (req, res, next) => {
 }
 
     req.file.detectedMimeType = detectedType.mime;
+    await sharp(req.file.buffer).metadata();
 
     next();
   } catch (error) {

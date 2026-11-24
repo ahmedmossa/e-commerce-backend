@@ -9,10 +9,10 @@ export const createCategory = async (req, res) => {
   try {
     // 1. Get data from request body
     const { name, description } = req.body;
-    if (!name || !name.trim()) {
-  return res.status(400).json({
-    message: "Category name is required",
-  });
+if (typeof name !== "string" || !name.trim()) {
+return res.status(400).json({
+message: "Category name is required",
+});
 }
 
     // 2. Check if image exists
@@ -23,20 +23,25 @@ export const createCategory = async (req, res) => {
     }
 
     // 3. Upload image to Cloudinary
-    const image = await uploadToCloudinary(
-      req.file.buffer,
-      "categories"
-    );
+    
+const image = await uploadToCloudinary(
+req.file.buffer,
+"categories"
+);
+if (!image?.url || !image?.public_id) {
+return res.status(500).json({
+message: "Image upload failed",
+});
+}
+const category = await Category.create({
+name,
+description,
+image: {
+url: image.url,
+public_id: image.public_id,
+},
+});
 
-    // 4. Create category in database
-    const category = await Category.create({
-      name,
-      description,
-      image: {
-        url: image.url,
-        public_id: image.public_id,
-      },
-    });
 
     // 5. Send response
     return res.status(201).json({
@@ -114,36 +119,57 @@ export const updateCategory = async (req, res) => {
       });
     }
 
-    const { name, description } = req.body;
+   
+const { name, description } = req.body;
+if (name !== undefined) {
+if (typeof name !== "string" || !name.trim()) {
+return res.status(400).json({
+message: "Category name must be a non-empty string",
+});
+}
+category.name = name.trim();
+}
+if (description !== undefined) {
+category.description = description;
+}
 
-    if (name !== undefined) category.name = name;
-    if (description !== undefined) category.description = description;
 
     let oldPublicId;
 
-    if (req.file) {
-      const image = await uploadToCloudinary(
-        req.file.buffer,
-        "categories"
-      );
-
-      oldPublicId = category.image.public_id;
-
-      category.image = {
-        url: image.url,
-        public_id: image.public_id,
-      };
-    }
-
-    await category.save();
-
-    if (oldPublicId) {
-      try {
-        await cloudinary.uploader.destroy(oldPublicId);
-      } catch (error) {
-        console.error("Failed to delete old category image:", error);
-      }
-    }
+  
+let newPublicId;
+if (req.file) {
+const image = await uploadToCloudinary(
+req.file.buffer,
+"categories"
+);
+if (!image?.url || !image?.public_id) {
+return res.status(500).json({
+message: "Image upload failed",
+});
+}
+newPublicId = image.public_id;
+oldPublicId = category.image?.public_id;
+category.image = {
+url: image.url,
+public_id: image.public_id,
+};
+}
+try {
+await category.save();
+} catch (error) {
+if (newPublicId) {
+await cloudinary.uploader.destroy(newPublicId);
+}
+throw error;
+}
+if (oldPublicId) {
+try {
+await cloudinary.uploader.destroy(oldPublicId);
+} catch (error) {
+console.error("Failed to delete old category image:", error);
+}
+}
 
     return res.status(200).json({
       message: "Category updated successfully",
@@ -175,25 +201,41 @@ export const deleteCategory = async (req, res) => {
         message: "Category not found",
       });
     }
+
     const subCategories = await SubCategory.find({
-  category: id,
-});
+      category: id,
+    });
 
-if (subCategories.length > 0) {
-  return res.status(400).json({
-    message: "Cannot delete category because it has subcategories",
-  });
-}
-
-    // Delete category image from Cloudinary
-    try {
-      await cloudinary.uploader.destroy(category.image.public_id);
-    } catch (error) {
-      console.error("Failed to delete category image:", error);
+    if (subCategories.length > 0) {
+      return res.status(400).json({
+        message: "Cannot delete category because it has subcategories",
+      });
     }
 
-    // Delete category from MongoDB
-    await Category.findByIdAndDelete(id);
+    // Save image public_id before deleting category
+    const imagePublicId = category.image?.public_id;
+
+    // Delete category from MongoDB first
+    const deletedCategory = await Category.findByIdAndDelete(id);
+
+    if (!deletedCategory) {
+      return res.status(404).json({
+        message: "Category not found",
+      });
+    }
+
+    // Delete category image from Cloudinary
+    if (imagePublicId) {
+      try {
+        const result = await cloudinary.uploader.destroy(imagePublicId);
+
+        if (result.result !== "ok" && result.result !== "not found") {
+          console.error("Unexpected Cloudinary deletion result:", result);
+        }
+      } catch (error) {
+        console.error("Failed to delete category image:", error);
+      }
+    }
 
     return res.status(200).json({
       message: "Category deleted successfully",
