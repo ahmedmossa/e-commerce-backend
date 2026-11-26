@@ -1,4 +1,3 @@
-
 import User from '../models/User.model.js';
 import Order from '../models/Order.model.js';
 
@@ -16,10 +15,45 @@ export const getDashboardStats = async (req, res, next) => {
     ]);
     const totalRevenue = revenueResult[0]?.total || 0;
 
-    // 2. عدد الطلبات الكلي
-    const totalOrders = await Order.countDocuments();
+    // 2. حساب معدل النمو (Growth Rate) - مقارنة الشهر الحالي باللي فات
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    // 3. أفضل 5 منتجات مبيعاً (sold + revenue)
+    const thisMonthRevenueResult = await Order.aggregate([
+      { $match: { status: 'delivered', createdAt: { $gte: startOfThisMonth } } },
+      { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+    ]);
+    const thisMonthRevenue = thisMonthRevenueResult[0]?.total || 0;
+
+    const lastMonthRevenueResult = await Order.aggregate([
+      { $match: { status: 'delivered', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+      { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+    ]);
+    const lastMonthRevenue = lastMonthRevenueResult[0]?.total || 0;
+
+    let growthRate = 0;
+    if (lastMonthRevenue > 0) {
+      growthRate = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
+    } else if (thisMonthRevenue > 0) {
+      growthRate = 100; // لو مفيش إيرادات الشهر اللي فات، النمو 100% مبدئياً
+    }
+
+    // 3. عدد الطلبات الكلي + إحصائيات الحالات (Order Status Counts)
+    const totalOrders = await Order.countDocuments();
+    
+    const orderCountsResult = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+    
+    // تحويل النتيجة لشكل يسهل على الـ Frontend استخدامه
+    const orderStatusCounts = {};
+    orderCountsResult.forEach(item => {
+      orderStatusCounts[item._id] = item.count;
+    });
+
+    // 4. أفضل 5 منتجات مبيعاً (sold + revenue)
     const topProducts = await Order.aggregate([
       { $unwind: '$items' },
       {
@@ -35,7 +69,7 @@ export const getDashboardStats = async (req, res, next) => {
       { $project: { _id: 1, name: 1, sold: 1, revenue: 1 } }
     ]);
 
-    // 4. إيرادات آخر 7 أيام
+    // 5. إيرادات آخر 7 أيام
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -51,20 +85,23 @@ export const getDashboardStats = async (req, res, next) => {
       { $project: { _id: 0, date: '$_id', revenue: 1 } }
     ]);
 
-    // 5. آخر 5 طلبات
+    // 6. آخر 5 طلبات
     const recentOrders = await Order.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .populate({ path: 'user', select: 'username email', strictPopulate: false });
 
-    // 6. عدد العملاء (role = customer)
+    // 7. عدد العملاء (role = customer)
     const totalCustomers = await User.countDocuments({ role: 'customer' });
 
+    // الرد النهائي
     res.status(200).json({
       success: true,
       data: {
         totalRevenue,
+        growthRate,
         totalOrders,
+        orderStatusCounts,
         topProducts,
         dailyRevenue,
         recentOrders,
