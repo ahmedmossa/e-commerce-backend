@@ -1,33 +1,77 @@
 
-import Joi from "joi";
+import { body, param, validationResult } from "express-validator";
+import ApiError from "../utils/apiError.js";
 
-const objectId = Joi.string()
-  .hex()
-  .length(24)
-  .messages({
-    "string.hex": "Invalid product ID",
-    "string.length": "Invalid product ID",
-  });
+export const validateCartRequest = (req, res, next) => {
+  const errors = validationResult(req);
 
-export const addItemSchema = Joi.object({
-  productId: objectId.required().messages({
-    "any.required": "Product ID is required",
-  }),
-  quantity: Joi.number().integer().min(1).default(1).messages({
-    "number.base": "Quantity must be a number",
-    "number.integer": "Quantity must be an integer",
-    "number.min": "Quantity must be at least 1",
-  }),
-});
+  if (!errors.isEmpty()) {
+    return next(
+      new ApiError(
+        "Validation failed",
+        400,
+        errors.array()
+      )
+    );
+  }
 
-export const updateItemSchema = Joi.object({
-  productId: objectId.required().messages({
-    "any.required": "Product ID is required",
-  }),
-  quantity: Joi.number().integer().min(1).required().messages({
-    "any.required": "Quantity is required",
-    "number.base": "Quantity must be a number",
-    "number.integer": "Quantity must be an integer",
-    "number.min": "Quantity must be at least 1",
-  }),
-});
+  next();
+};
+
+const productIdValidator = () =>
+  body("productId")
+    .isString()
+    .withMessage("Product ID must be a string")
+    .bail()
+    .trim()
+    .notEmpty()
+    .withMessage("Product ID is required")
+    .bail()
+    .isMongoId()
+    .withMessage("Invalid product ID")
+    .bail()
+    .toLowerCase();
+
+const quantityValidator = () =>
+  body("quantity")
+    .custom((value) => {
+      if (
+        !["number", "string"].includes(typeof value) ||
+        String(value).trim() === "" ||
+        !Number.isSafeInteger(Number(value)) ||
+        Number(value) < 1
+      ) {
+        throw new Error(
+          "Quantity must be a whole number of at least 1"
+        );
+      }
+
+      return true;
+    })
+    .customSanitizer((value) => Number(value));
+
+export const addItemValidator = [
+  productIdValidator(),
+
+  quantityValidator().optional(),
+
+  validateCartRequest,
+];
+
+export const updateItemValidator = [
+  productIdValidator(),
+
+  quantityValidator(),
+
+  validateCartRequest,
+];
+
+export const removeItemValidator = [
+  param("productId")
+    .isMongoId()
+    .withMessage("Invalid product ID")
+    .bail()
+    .toLowerCase(),
+
+  validateCartRequest,
+];
