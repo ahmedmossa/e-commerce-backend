@@ -6,7 +6,7 @@
 ## Project Information | بيانات المشروع
 - **Project Name:** E-Commerce Backend
 - **Team:** Team 6
-- **Team Leader:** Eng. Ahmed Ibrahim Mousa
+- **Team Leader:** Eng. Ahmed Ibrahim Mohamed Ibrahim Mousa
 - **Integration Review Lead:** Eng. Amany Ibrahim Arafa
 - **Responsible Track:** Track 11 – Integration Testing & System Audit
 - **Preliminary Review Deadline:** Friday, 27/11/2026
@@ -15,13 +15,30 @@
 
 ---
 
-## 1. Review Timeline | الجدول الزمني للمراجعة
+## 1. Team Members | أعضاء الفريق
+| No. | Member Name | Role |
+| :--- | :--- | :--- |
+| 1 | Ahmed Ibrahim Mohamed Ibrahim Mousa | Team Leader |
+| 2 | Ahmed Samir Mostafa Mukhaymer | Team Member |
+| 3 | Mohamed Abosamra | Team Member |
+| 4 | Rahma Mahmoud Shoaib | Team Member |
+| 5 | Batool Ahmed El-Khalif | Team Member |
+| 6 | Omar Ashraf Abdelghany | Team Member |
+| 7 | Dima Sameh Saleh | Team Member |
+| 8 | Eithar Ahmed Abdel Tawab Ali | Team Member |
+| 9 | Amany Ibrahim Arafa | Team Member – Track 11 |
+
+**Total Team Members:** 9
+
+---
+
+## 2. Review Timeline | الجدول الزمني للمراجعة
 - **Friday, 27/11/2026:** آخر موعد للمراجعة المبدئية (Preliminary Review) لأعمال التراكات.
 - **Saturday, 28/11/2026:** بداية مرحلة مراجعة التكامل الشاملة (Full Project Integration Review) تحت إشراف **Track 11** لمراجعة جميع أجزاء المشروع والتأكد من تكاملها واستقرارها.
 
 ---
 
-## 2. Integration Review Objectives | أهداف مراجعة التكامل
+## 3. Integration Review Objectives | أهداف مراجعة التكامل
 1. **Tracks Integration:** مراجعة تكامل جميع التراكات والتأكد من توافقها مع بعضها البعض.
 2. **Code Compatibility:** التأكد من توافق الـ Routes والـ Controllers والـ Models.
 3. **API Endpoints Validation:** مراجعة جميع الـ Endpoints والتأكد من صحة الـ HTTP Methods والـ Status Codes.
@@ -32,7 +49,7 @@
 
 ---
 
-## 3. Review Workflow | آلية متابعة المراجعة
+## 4. Review Workflow | آلية متابعة المراجعة
 1. **Issue Detection – اكتشاف المشكلة:** تحديد المشكلة من خلال مراجعة الكود أو تنفيذ الاختبارات.
 2. **Issue Documentation – توثيق المشكلة:** تسجيل (File Name, Code Location, Issue Description, Severity, Current Code, Proposed Solution).
 3. **Issue Assignment – تحديد المسؤول:** إرسال المشكلة إلى Track Owner المسؤول عن الجزء المتعلق بها.
@@ -42,7 +59,7 @@
 
 ---
 
-## 4. General Guidelines | تعليمات عامة
+## 5. General Guidelines | تعليمات عامة
 - يجب على كل Track Owner متابعة الملاحظات الخاصة بالتراك المسؤول عنه.
 - يجب عدم إجراء تعديلات على الملفات المشتركة دون التنسيق المسبق مع Team Leader.
 - يجب التأكد من أن جميع أعضاء الفريق يعملون على نسخة المشروع المعتمدة.
@@ -53,7 +70,7 @@
 
 ---
 
-## 5. Expected Outcomes | النتائج المستهدفة
+## 6. Expected Outcomes | النتائج المستهدفة
 1. نسخة Backend مستقرة ومتكاملة.
 2. توافق جميع التراكات مع بعضها البعض.
 3. التأكد من صحة الـ API Endpoints والـ Data Schemas.
@@ -64,7 +81,7 @@
 
 ---
 
-## 6. Final Review Report | التقرير النهائي للمراجعة
+## 7. Final Review Report | التقرير النهائي للمراجعة
 - **Total Test Cases:** `Pending`
 - **Passed Tests:** `Pending`
 - **Failed Tests:** `Pending`
@@ -78,4 +95,4 @@
 ---
 
 **Prepared By:** Eng. Amany Ibrahim Arafa (Track 11 – Integration Testing & System Audit)  
-**Under the Coordination Of:** Eng. Ahmed Ibrahim Mousa (Team Leader – Team 6)
+**Under the Coordination Of:** Eng. Ahmed Ibrahim Mohamed Ibrahim Mousa (Team Leader – Team 6)
