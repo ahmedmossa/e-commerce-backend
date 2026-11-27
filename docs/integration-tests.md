@@ -59,6 +59,6 @@ ode server.js.
 
 ### Slide 5 — Products Route 404 Finding | نتيجة اختبار مسار المنتجات (404)
 ![Products Route 404 Finding](screenshots/Slide5.JPG)
-> **EN:** Executed Product endpoint tests for invalid and non-existent IDs (GET /api/v1/products/invalid-id and GET /api/v1/products/000000000000000000000000): both returned HTTP 404 (Can't find this route) instead of reaching validation (400), confirming that /api/v1/products is not yet mounted in index.js.
+> **:** Executed Product endpoint tests for invalid and non-existent IDs (GET /api/v1/products/invalid-id and GET /api/v1/products/000000000000000000000000): both returned HTTP 404 (Can't find this route) instead of reaching validation (400), confirming that /api/v1/products is not yet mounted in index.js.
 >
-> **AR:** تم تنفيذ اختبارات مسار المنتجات لمعرّفات غير صالحة أو غير موجودة (GET /api/v1/products/invalid-id و GET /api/v1/products/000000000000000000000000): رجع السيرفر كود الحالة 404 (Can't find this route) بدلًا من الوصول لمرحلة التحقق (400)، مما يؤكد أن مسار /api/v1/products لم يُربط بعد في index.js.
+> **:** تم تنفيذ اختبارات مسار المنتجات لمعرّفات غير صالحة أو غير موجودة (GET /api/v1/products/invalid-id و GET /api/v1/products/000000000000000000000000): رجع السيرفر كود الحالة 404 (Can't find this route) بدلًا من الوصول لمرحلة التحقق (400)، مما يؤكد أن مسار /api/v1/products لم يُربط بعد في index.js.
