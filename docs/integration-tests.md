@@ -40,4 +40,25 @@
 - [ ] Carts (`/api/v1/carts`)
 - [ ] Wishlists (`/api/v1/wishlists`)
 - [ ] Orders (`/api/v1/orders`)
-- [ ] Payment (`/api/v1/payment` & webhook)
+- [ ] Payment (`/api/v1/payment` & webhook)@'
+## 5. Test Evidence Screenshots | لقطات الأدلة والاختبارات
+
+### Slide 3 — Environment & Server Setup | تهيئة البيئة وتشغيل السيرفر
+![Environment & Server Setup](screenshots/Slide3.JPG)
+> **EN:** Verified local workspace path (-commerce-backend-track11), active branch eature/track-11-testing (4f39332) after merging eature/track-05-products, and initiated server startup via 
+ode server.js.
+>
+> **AR:** تم التحقق من مسار المشروع والعمل على فرع eature/track-11-testing بعد دمج فرع المنتجات (eature/track-05-products)، وبدء تشغيل السيرفر بأمر 
+ode server.js.
+
+### Slide 4 — Core Infrastructure & Health Checks | فحص البنية التحتية وحالة السيرفر
+![Core Infrastructure & Health Checks](screenshots/Slide4.JPG)
+> **EN:** Executed core infrastructure checks on http://localhost:5000: GET / returned success: true with "E-Commerce API is running successfully for Core Team 6", GET /health returned success: true, status: "ok", and nvironment: "development", and GET /not-a-real-route was triggered to verify the 404 error handler.
+>
+> **AR:** تم تنفيذ اختبارات البنية التحتية الأساسية على http://localhost:5000: رجع GET / قيمة success: true مع رسالة "E-Commerce API is running successfully for Core Team 6"، ورجع GET /health قيمة success: true وحالة status: "ok" على بيئة development، وتم تشغيل طلب GET /not-a-real-route للتحقق من معالج أخطاء 404.
+
+### Slide 5 — Products Route 404 Finding | نتيجة اختبار مسار المنتجات (404)
+![Products Route 404 Finding](screenshots/Slide5.JPG)
+> **EN:** Executed Product endpoint tests for invalid and non-existent IDs (GET /api/v1/products/invalid-id and GET /api/v1/products/000000000000000000000000): both returned HTTP 404 (Can't find this route) instead of reaching validation (400), confirming that /api/v1/products is not yet mounted in index.js.
+>
+> **AR:** تم تنفيذ اختبارات مسار المنتجات لمعرّفات غير صالحة أو غير موجودة (GET /api/v1/products/invalid-id و GET /api/v1/products/000000000000000000000000): رجع السيرفر كود الحالة 404 (Can't find this route) بدلًا من الوصول لمرحلة التحقق (400)، مما يؤكد أن مسار /api/v1/products لم يُربط بعد في index.js.
