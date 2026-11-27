@@ -53,9 +53,9 @@ ode server.js.
 
 ### Slide 4 — Core Infrastructure & Health Checks | فحص البنية التحتية وحالة السيرفر
 ![Core Infrastructure & Health Checks](screenshots/Slide4.JPG)
-> **EN:** Executed core infrastructure checks on http://localhost:5000: GET / returned success: true with "E-Commerce API is running successfully for Core Team 6", GET /health returned success: true, status: "ok", and nvironment: "development", and GET /not-a-real-route was triggered to verify the 404 error handler.
+> **:** Executed core infrastructure checks on http://localhost:5000: GET / returned success: true with "E-Commerce API is running successfully for Core Team 6", GET /health returned success: true, status: "ok", and nvironment: "development", and GET /not-a-real-route was triggered to verify the 404 error handler.
 >
-> **AR:** تم تنفيذ اختبارات البنية التحتية الأساسية على http://localhost:5000: رجع GET / قيمة success: true مع رسالة "E-Commerce API is running successfully for Core Team 6"، ورجع GET /health قيمة success: true وحالة status: "ok" على بيئة development، وتم تشغيل طلب GET /not-a-real-route للتحقق من معالج أخطاء 404.
+> **:** تم تنفيذ اختبارات البنية التحتية الأساسية على http://localhost:5000: رجع GET / قيمة success: true مع رسالة "E-Commerce API is running successfully for Core Team 6"، ورجع GET /health قيمة success: true وحالة status: "ok" على بيئة development، وتم تشغيل طلب GET /not-a-real-route للتحقق من معالج أخطاء 404.
 
 ### Slide 5 — Products Route 404 Finding | نتيجة اختبار مسار المنتجات (404)
 ![Products Route 404 Finding](screenshots/Slide5.JPG)
