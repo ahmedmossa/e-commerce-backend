@@ -8,8 +8,18 @@ class AppError extends Error {
     constructor(message,statusCode = 400) {
         super(message);
         this.statusCode = statusCode;
+        this.isOperational = true;
     }
 }
+
+const getQuerySource = req => req.validatedQuery || req.query || {};
+
+const getPagination = querySource => ({
+    page: Math.max(1,Number(querySource.page) || 1),
+    limit: Math.min(100,Math.max(1,Number(querySource.limit) || 10))
+});
+
+const getStringFilter = value => typeof value === "string" && value ? value : undefined;
 
 const calculateOrderPrices = (subtotal,discount = 0) => {
     const cleanSubtotal = Number(subtotal);
@@ -30,7 +40,6 @@ const buildOrderItems = cartItems => cartItems.map(item => {
     if (!item.product) {
         throw new AppError("One or more cart items reference a missing product",400);
     }
-    // The price, name and image come from the cart item snapshot (same prices the cart discount is based on)
     const price = Number(item.price);
     const quantity = Number(item.quantity);
     if (!Number.isFinite(price) || price < 0 || !Number.isInteger(quantity) || quantity < 1) {
@@ -111,11 +120,12 @@ export const createOrder = async (req,res) => {
 
 export const getMyOrders = async (req,res) => {
     try {
-        const page = Number(req.validatedQuery.page) || 1;
-        const limit = Number(req.validatedQuery.limit) || 10;
+        const querySource = getQuerySource(req);
+        const {page,limit} = getPagination(querySource);
         const filter = {user: req.user._id};
-        if (req.validatedQuery.status) {
-            filter.status = req.validatedQuery.status;
+        const status = getStringFilter(querySource.status);
+        if (status) {
+            filter.status = status;
         }
         const orders = await Order.find(filter).sort({createdAt: -1}).skip((page - 1) * limit).limit(limit);
         const total = await Order.countDocuments(filter);
@@ -159,14 +169,16 @@ export const cancelOrder = async (req,res) => {
 
 export const adminGetOrders = async (req,res) => {
     try {
-        const page = Number(req.validatedQuery.page) || 1;
-        const limit = Number(req.validatedQuery.limit) || 10;
+        const querySource = getQuerySource(req);
+        const {page,limit} = getPagination(querySource);
         const filter = {};
-        if (req.validatedQuery.status) {
-            filter.status = req.validatedQuery.status;
+        const status = getStringFilter(querySource.status);
+        const user = getStringFilter(querySource.user);
+        if (status) {
+            filter.status = status;
         }
-        if (req.validatedQuery.user) {
-            filter.user = req.validatedQuery.user;
+        if (user) {
+            filter.user = user;
         }
         const orders = await Order.find(filter).populate("user","name email").sort({createdAt: -1}).skip((page - 1) * limit).limit(limit);
         const total = await Order.countDocuments(filter);
